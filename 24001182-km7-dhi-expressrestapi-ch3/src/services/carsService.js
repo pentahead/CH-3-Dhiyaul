@@ -1,6 +1,7 @@
-const { v4: uuidv4 } = require('uuid');
-const carsRepository = require('../repositories/carsRepository');
-const { imageUpload } = require('../utils/image-kit');
+const { v4: uuidv4 } = require("uuid");
+const carsRepository = require("../repositories/carsRepository");
+const { imageUpload } = require("../utils/image-kit");
+const { NotFoundError } = require("../utils/requestHandler");
 
 const carsService = {
   // Mendapatkan semua car atau melakukan filter
@@ -20,12 +21,20 @@ const carsService = {
       );
     }
 
+    if (cars.length === 0) {
+      throw new NotFoundError("No cars found with the provided criteria.");
+    }
+
     return cars;
   },
 
   // Mendapatkan car berdasarkan ID
   getCarById: (id) => {
-    return carsRepository.getCarById(id);
+    const car = carsRepository.getCarById(id);
+    if (!car) {
+      throw new NotFoundError(carsRepository.getCarById.errors);
+    }
+    return car;
   },
 
   // Menambahkan car baru
@@ -50,11 +59,11 @@ const carsService = {
   // update car berdasarkan ID
   updateCar: async (id, carData, imageFile) => {
     const car = carsRepository.getCarById(id);
-    
+
     if (!car) {
-      throw new Error('Car not found');
+      throw new Error("Car not found");
     }
-    
+
     let imageUrl = car.image;
     if (imageFile && imageFile.data) {
       try {
@@ -63,7 +72,7 @@ const carsService = {
         throw error;
       }
     }
-    
+
     const updatedCar = { ...car, ...carData, image: imageUrl };
     carsRepository.updateCar(id, updatedCar);
 

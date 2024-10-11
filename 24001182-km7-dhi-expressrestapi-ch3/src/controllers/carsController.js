@@ -5,18 +5,12 @@ const { NotFoundError } = require("../utils/requestHandler");
 const getCars = (req, res, next) => {
   const filters = req.query;
   const cars = carsService.getAllCars(filters);
-  if (cars.length === 0) {
-    throw new NotFoundError("No cars found with the provided criteria.");
-  }
   successResponse(res, cars);
 };
 
 // Mendapatkan car berdasarkan ID
 const getCarById = (req, res, next) => {
   const car = carsService.getCarById(req.params.id);
-  if (!car) {
-    throw new NotFoundError(carsService.getCarById.errors);
-  }
   successResponse(res, car);
 };
 
