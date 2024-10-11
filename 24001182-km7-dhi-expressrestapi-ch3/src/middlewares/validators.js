@@ -5,37 +5,112 @@ const { BadRequestError } = require("../utils/requestHandler");
 const carValidationRules = [
   body("plate")
     .isString()
+    .trim()
     .notEmpty()
-    .withMessage("Plat nomor tidak boleh kosong"),
+    .withMessage("Plate tidak boleh kosong"),
   body("manufacture")
     .isString()
+    .trim()
     .notEmpty()
-    .withMessage("Merek tidak boleh kosong"),
-  body("model").isString().notEmpty().withMessage("Model tidak boleh kosong"),
+    .withMessage("Manufacture tidak boleh kosong"),
+  body("model")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Model tidak boleh kosong"),
   body("rentPerDay")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("rentPerDay tidak boleh kosong")
+    .customSanitizer(value => {
+      const parsed = parseInt(value);
+      return isNaN(parsed) ? null : parsed;
+    })
     .isInt({ gt: 0 })
-    .withMessage("Harga sewa harus berupa angka positif"),
+    .withMessage("rentPerDay harus berupa angka positif"),
   body("capacity")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Capacity tidak boleh kosong")
+    .customSanitizer(value => {
+      const parsed = parseInt(value);
+      return isNaN(parsed) ? null : parsed;
+    })
     .isInt({ gt: 0 })
-    .withMessage("Kapasitas harus berupa angka positif"),
+    .withMessage("Capacity harus berupa angka positif"),
   body("description")
     .isString()
+    .trim()
     .notEmpty()
-    .withMessage("Deskripsi tidak boleh kosong"),
+    .withMessage("description tidak boleh kosong"),
   body("availableAt")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("availableAt tidak boleh kosong")
+    .customSanitizer(value => {
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? null : date.toISOString();
+    })
     .isISO8601()
-    .withMessage("Tanggal ketersediaan tidak valid"),
+    .withMessage("availableAt harus dalam format ISO8601"),
   body("transmission")
     .isString()
+    .trim()
     .notEmpty()
-    .withMessage("Transmisi tidak boleh kosong"),
+    .withMessage("transmission tidak boleh kosong"),
   body("available")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("available tidak boleh kosong")
+    .customSanitizer(value => value.toLowerCase() === 'true')
     .isBoolean()
-    .withMessage("Ketersediaan harus berupa boolean"),
-  body("type").isString().notEmpty().withMessage("Tipe tidak boleh kosong"),
-  body("year").isInt({ gt: 1885 }).withMessage("Tahun harus lebih dari 1885"),
-  body("options").isArray().withMessage("Opsi harus berupa array").optional(),
-  body("specs").isArray().withMessage("Spesifikasi harus berupa array").optional(),
+    .withMessage("available harus berupa boolean"),
+  body("type")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Tipe tidak boleh kosong"),
+  body("year")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("year tidak boleh kosong")
+    .customSanitizer(value => {
+      const parsed = parseInt(value);
+      return isNaN(parsed) ? null : parsed;
+    })
+    .isInt({ gt: 1885 })
+    .withMessage("year harus lebih dari 1885"),
+  body("options")
+    .optional()
+    .isString()
+    .customSanitizer(value => {
+      if (!value || value.trim() === "") return null;
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        throw new Error("options harus berupa JSON array yang valid");
+      }
+    })
+    .isArray()
+    .withMessage("options harus berupa array"),
+  body("specs")
+    .optional()
+    .isString()
+    .customSanitizer(value => {
+      if (!value || value.trim() === "") return null;
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        throw new Error("specsifications harus berupa JSON array yang valid");
+      }
+    })
+    .isArray()
+    .withMessage("specsifications harus berupa array"),
   (req, res, next) => {
     if (!req.files || !req.files.image) {
       return next(); //cek if  there is an image or not, then next
@@ -60,7 +135,7 @@ const carValidationRules = [
 const validateCar = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ status: false, errors: errors.array() });
+    throw new BadRequestError("");
   }
   next();
 };
